@@ -1,38 +1,42 @@
 from __future__ import annotations
 
 import os
-from typing import Optional
-
-import google.generativeai as genai
-
-
-GEMINI_MODEL = os.environ.get("ALWRITY_GEMINI_MODEL", "gemini-2.5-flash")
+from typing import Dict, Any
+import requests
 
 
-def summarize_with_gemini(api_key: str, prompt: str) -> str:
-    if not api_key:
-        raise ValueError("Missing API key.")
+BACKEND_API_URL = os.environ.get("ALWRITY_BACKEND_URL", "https://api.alwrity.com/summarize")
 
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel(GEMINI_MODEL)
-    response = model.generate_content(prompt)
 
-    # The SDK can return candidates; prefer text
-    text: Optional[str] = None
-    if hasattr(response, "text") and response.text:
-        text = response.text
-    elif hasattr(response, "candidates") and response.candidates:
-        for c in response.candidates:
-            try:
-                text = c.content.parts[0].text  # type: ignore[attr-defined]
-                if text:
-                    break
-            except Exception:
-                continue
-
-    if not text:
-        raise RuntimeError("No summary returned from the model.")
-
-    return text
+def summarize_with_gemini(prompt: str) -> str:
+    """
+    Send summarization request to backend API instead of direct Gemini API.
+    """
+    try:
+        response = requests.post(
+            BACKEND_API_URL,
+            json={"prompt": prompt},
+            timeout=30,
+            headers={"Content-Type": "application/json"}
+        )
+        response.raise_for_status()
+        
+        data: Dict[str, Any] = response.json()
+        
+        if "summary" not in data:
+            raise RuntimeError("Invalid response format from backend API.")
+            
+        summary = data["summary"]
+        if not summary or not summary.strip():
+            raise RuntimeError("Empty summary returned from backend API.")
+            
+        return summary.strip()
+        
+    except requests.exceptions.RequestException as e:
+        raise RuntimeError(f"Backend API error: {str(e)}")
+    except KeyError as e:
+        raise RuntimeError(f"Invalid response format: missing {e}")
+    except Exception as e:
+        raise RuntimeError(f"Unexpected error: {str(e)}")
 
 

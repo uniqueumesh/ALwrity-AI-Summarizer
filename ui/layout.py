@@ -23,19 +23,6 @@ def render_layout() -> None:
     st.title("ALwrity-AI-Summarizer")
     st.caption("Turn long text into clear, actionable summaries in seconds.")
 
-    with st.expander("API Key (Gemini)", expanded=True):
-        api_key = st.text_input(
-            "Gemini API Key",
-            type="password",
-            help=(
-                "Enter your Gemini API key. Your key stays only in this session and "
-                "is not stored."
-            ),
-            key="api_key_input",
-        )
-
-    st.markdown("---")
-
     input_text = st.text_area(
         "Input Text (max 1000 words)",
         placeholder="Paste up to 1000 words of text to summarize...",
@@ -78,7 +65,6 @@ def render_layout() -> None:
 
     st.markdown("---")
     submit_disabled, submit_reason = can_submit(
-        api_key=api_key,
         text=trimmed_text,
         tone_choice=tone_choice,
         custom_tone=custom_tone,
@@ -98,7 +84,7 @@ def render_layout() -> None:
                     tone_choice=tone_choice,
                     custom_tone=custom_tone,
                 )
-                result = summarize_with_gemini(api_key=api_key, prompt=prompt)
+                result = summarize_with_gemini(prompt=prompt)
                 st.session_state.summary = result.strip()
             except Exception as exc:  # noqa: BLE001
                 st.session_state.summary = ""
