@@ -3,6 +3,7 @@ from streamlit.components.v1 import html as _html
 from core.validation import clamp_to_word_limit, count_words, can_submit
 from core.prompt import build_prompt
 from services.gemini_client import summarize_with_gemini
+from services.tts_service import text_to_speech
 
 
 TONE_OPTIONS = [
@@ -161,7 +162,19 @@ def render_layout() -> None:
             label_visibility="collapsed",
             key="summary_output",
         )
-        _render_copy_button(st.session_state.summary)
+        
+        # Action buttons row
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            _render_copy_button(st.session_state.summary)
+        with col2:
+            if st.button("🔊 Listen to Summary", key="tts_button", help="Listen to summary using browser TTS"):
+                try:
+                    text_to_speech(st.session_state.summary)
+                    _render_browser_tts(st.session_state.summary)
+                    st.success("Starting audio playback...")
+                except Exception as e:
+                    st.error(f"TTS Error: {str(e)}")
     else:
         st.caption("Your summary will appear here after processing.")
 
@@ -202,6 +215,77 @@ def _render_copy_button(text: str) -> None:
         </script>
         """,
         height=46,
+    )
+
+
+def _render_browser_tts(text: str) -> None:
+    """
+    Render browser-based text-to-speech using Web Speech API.
+    """
+    import json
+    
+    safe_text = json.dumps(text)
+    _html(
+        f"""
+        <div style="margin-top: 10px;">
+            <button id="speak-btn" style="padding: 8px 16px; background: #ff4b4b; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                🔊 Speak Now
+            </button>
+            <button id="stop-btn" style="padding: 8px 16px; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 8px;">
+                ⏹️ Stop
+            </button>
+            <script>
+                (function() {{
+                    const text = {safe_text};
+                    let utterance = null;
+                    
+                    const speakBtn = document.getElementById('speak-btn');
+                    const stopBtn = document.getElementById('stop-btn');
+                    
+                    if ('speechSynthesis' in window) {{
+                        speakBtn.addEventListener('click', function() {{
+                            // Stop any current speech
+                            speechSynthesis.cancel();
+                            
+                            // Create new utterance
+                            utterance = new SpeechSynthesisUtterance(text);
+                            utterance.rate = 0.9;
+                            utterance.pitch = 1;
+                            utterance.volume = 1;
+                            
+                            // Start speaking
+                            speechSynthesis.speak(utterance);
+                            
+                            speakBtn.textContent = '🔊 Speaking...';
+                            speakBtn.disabled = true;
+                        }});
+                        
+                        stopBtn.addEventListener('click', function() {{
+                            speechSynthesis.cancel();
+                            speakBtn.textContent = '🔊 Speak Now';
+                            speakBtn.disabled = false;
+                        }});
+                        
+                        // Reset button when speech ends
+                        utterance = new SpeechSynthesisUtterance('');
+                        utterance.onend = function() {{
+                            speakBtn.textContent = '🔊 Speak Now';
+                            speakBtn.disabled = false;
+                        }};
+                        
+                        // Auto-start speaking
+                        setTimeout(() => {{
+                            speakBtn.click();
+                        }}, 100);
+                    }} else {{
+                        speakBtn.textContent = 'TTS Not Supported';
+                        speakBtn.disabled = true;
+                    }}
+                }})();
+            </script>
+        </div>
+        """,
+        height=80,
     )
 
 
