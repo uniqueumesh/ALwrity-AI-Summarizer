@@ -63,7 +63,7 @@ def render_layout() -> None:
     if "summary" not in st.session_state:
         st.session_state.summary = ""
 
-    st.title("ALwrity-AI-Summarizer")
+    st.title("ALwrity-AI-Content-Summarizer")
     st.caption("Turn long text into clear, actionable summaries in seconds.")
 
     input_text = st.text_area(

@@ -3,7 +3,7 @@ from ui.layout import render_layout
 
 
 def main() -> None:
-    st.set_page_config(page_title="ALwrity-AI-Summarizer", page_icon="📝", layout="centered")
+    st.set_page_config(page_title="ALwrity-AI-Content-Summarizer", page_icon="📝", layout="centered")
     render_layout()
 
 
