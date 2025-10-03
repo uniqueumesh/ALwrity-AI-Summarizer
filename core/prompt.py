@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 
-def build_prompt(text: str, format_choice: str, tone_choice: str, custom_tone: str) -> str:
+def build_prompt(text: str, format_choice: str, tone_choice: str, custom_tone: str, language_choice: str, custom_language: str) -> str:
     chosen_tone = custom_tone.strip() if tone_choice == "Custom" and custom_tone else tone_choice
+    chosen_language = custom_language.strip() if language_choice == "Custom" and custom_language else language_choice
+    
     target_format_instruction = (
         "Write a single cohesive paragraph."
         if format_choice == "Paragraph"
@@ -19,6 +21,7 @@ Objectives:
 
 Constraints:
 - Tone: {chosen_tone}.
+- Language: {chosen_language}.
 - Format: {format_choice}. {target_format_instruction}
 - Keep it concise and readable on a mobile screen.
 

@@ -24,7 +24,7 @@ def clamp_to_word_limit(text: str, limit: int = 1000) -> str:
     return " ".join(clamped)
 
 
-def can_submit(text: str, tone_choice: str, custom_tone: str) -> Tuple[bool, str]:
+def can_submit(text: str, tone_choice: str, custom_tone: str, language_choice: str, custom_language: str) -> Tuple[bool, str]:
     # Returns (disabled, reason)
     if not text or not text.strip():
         return True, "Please add some text (≤ 1000 words)."
@@ -32,6 +32,8 @@ def can_submit(text: str, tone_choice: str, custom_tone: str) -> Tuple[bool, str
         return True, "Your input exceeds 1000 words. Please shorten it."
     if tone_choice == "Custom" and not (custom_tone and custom_tone.strip()):
         return True, "Custom tone can't be empty."
+    if language_choice == "Custom" and not (custom_language and custom_language.strip()):
+        return True, "Custom language can't be empty."
     return False, ""
 
 

@@ -15,6 +15,49 @@ TONE_OPTIONS = [
     "Custom",
 ]
 
+LANGUAGE_OPTIONS = [
+    "English",
+    "Spanish",
+    "French",
+    "German",
+    "Italian",
+    "Portuguese",
+    "Russian",
+    "Chinese (Simplified)",
+    "Chinese (Traditional)",
+    "Japanese",
+    "Korean",
+    "Arabic",
+    "Hindi",
+    "Dutch",
+    "Swedish",
+    "Norwegian",
+    "Danish",
+    "Finnish",
+    "Polish",
+    "Czech",
+    "Hungarian",
+    "Romanian",
+    "Bulgarian",
+    "Croatian",
+    "Slovak",
+    "Slovenian",
+    "Greek",
+    "Turkish",
+    "Hebrew",
+    "Thai",
+    "Vietnamese",
+    "Indonesian",
+    "Malay",
+    "Filipino",
+    "Ukrainian",
+    "Belarusian",
+    "Lithuanian",
+    "Latvian",
+    "Estonian",
+    "Custom",
+]
+
 
 def render_layout() -> None:
     if "summary" not in st.session_state:
@@ -37,7 +80,7 @@ def render_layout() -> None:
     st.markdown(f"<span style='color:{counter_color}'>Words: {word_count}/1000</span>", unsafe_allow_html=True)
 
     st.subheader("Options")
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     with col1:
         format_choice = st.radio(
             "Result format",
@@ -62,12 +105,29 @@ def render_layout() -> None:
                 placeholder="e.g., persuasive, academic, playful…",
                 key="custom_tone",
             )
+    with col3:
+        language_choice = st.selectbox(
+            "Language",
+            options=LANGUAGE_OPTIONS,
+            index=0,
+            help="Select the language for the summary.",
+            key="language_choice",
+        )
+        custom_language = ""
+        if language_choice == "Custom":
+            custom_language = st.text_input(
+                "Custom language",
+                placeholder="e.g., Swahili, Bengali, Tamil…",
+                key="custom_language",
+            )
 
     st.markdown("---")
     submit_disabled, submit_reason = can_submit(
         text=trimmed_text,
         tone_choice=tone_choice,
         custom_tone=custom_tone,
+        language_choice=language_choice,
+        custom_language=custom_language,
     )
 
     if submit_disabled and submit_reason:
@@ -83,6 +143,8 @@ def render_layout() -> None:
                     format_choice=format_choice,
                     tone_choice=tone_choice,
                     custom_tone=custom_tone,
+                    language_choice=language_choice,
+                    custom_language=custom_language,
                 )
                 result = summarize_with_gemini(prompt=prompt)
                 st.session_state.summary = result.strip()
