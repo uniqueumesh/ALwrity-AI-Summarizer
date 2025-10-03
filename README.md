@@ -4,7 +4,7 @@ An ultra-fast, accurate AI summarization tool that turns long articles, PDFs, we
 
 Ultra-fast, accurate AI summarization that turns long text into clear, actionable summaries. Built for creators, marketers, students, and busy professionals who need the gist without the grind.
 
-This is a Streamlit app that connects to the ALwrity backend API for AI processing. No API keys or configuration needed - just paste your text and get instant summaries.
+This is a Streamlit app that uses the Gemini 2.5 Flash model for AI processing. The API key is configured server-side, so users just need to paste their text and get instant summaries.
 
 ### Key Features
 - **Plain text input** up to 1000 words (with live counter)
@@ -15,7 +15,7 @@ This is a Streamlit app that connects to the ALwrity backend API for AI processi
 
 ### Requirements
 - Python 3.10+
-- Internet connection for backend API access
+- Gemini API key (configured as environment variable `GEMINI_API_KEY`)
 
 ### Quick Start
 1. Install dependencies:
@@ -29,16 +29,17 @@ streamlit run app.py
 3. In your browser, paste your text (≤1000 words), choose format and tone, and click Summarize. Use the Copy button to copy the result.
 
 ### How It Works
-- The app builds a clear, constrained prompt that matches your chosen format and tone, then sends it to the ALwrity backend API for processing.
-- Your text is sent securely to the backend API and is not stored locally by this app.
+- The app builds a clear, constrained prompt that matches your chosen format and tone, then calls the Gemini 2.5 Flash model.
+- Your text is processed by Gemini and is not stored locally by this app.
 
-### Configuration (Optional)
-- Backend API URL: set the environment variable `ALWRITY_BACKEND_URL` to use a different backend endpoint (default is `https://api.alwrity.com/summarize`).
+### Configuration (Required for Deployment)
+- **Gemini API Key**: Set the environment variable `GEMINI_API_KEY` with your Gemini API key.
   - Example (PowerShell):
   ```bash
-  $env:ALWRITY_BACKEND_URL = "https://your-backend.com/summarize"
+  $env:GEMINI_API_KEY = "your-gemini-api-key-here"
   streamlit run app.py
   ```
+- **Model Selection**: Set `ALWRITY_GEMINI_MODEL` to use a different Gemini model (default is `gemini-2.5-flash`).
 
 ### Usage Tips
 - Keep inputs focused. Short, relevant text produces the best summaries.
@@ -48,11 +49,11 @@ streamlit run app.py
 ### Troubleshooting
 - "Please add some text (≤ 1000 words)": Paste text; keep it within the limit.
 - "Your input exceeds 1000 words": The app enforces the limit; shorten your input.
-- Backend API error: Check your internet connection and try again.
+- "Gemini API key not configured": Set the `GEMINI_API_KEY` environment variable with your Gemini API key.
 - Copy button does nothing: Your browser may block clipboard access. Click on the page once and try again; the app includes a fallback that simulates copying.
 
 ### Privacy & Security
-- The app does not store your input text locally. Content is sent securely to the ALwrity backend API for processing.
+- The app does not store your input text locally. Content is sent securely to Google's Gemini API for processing.
 
 ### Project Structure (Overview)
 ```
@@ -60,7 +61,7 @@ app.py                     # Streamlit entry point
 ui/layout.py               # UI layout and interactions
 core/validation.py         # Input word count and submission gating
 core/prompt.py             # Prompt builder (format & tone aware)
-services/gemini_client.py  # Backend API client
+services/gemini_client.py  # Gemini API client (server-side key)
 requirements.txt           # Python dependencies
 ```
 
