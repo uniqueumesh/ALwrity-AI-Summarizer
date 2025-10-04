@@ -63,6 +63,8 @@ LANGUAGE_OPTIONS = [
 def render_layout() -> None:
     if "summary" not in st.session_state:
         st.session_state.summary = ""
+    if "tts_playing" not in st.session_state:
+        st.session_state.tts_playing = False
 
     st.title("ALwrity-AI-Content-Summarizer")
     st.caption("Turn long text into clear, actionable summaries in seconds.")
@@ -168,13 +170,22 @@ def render_layout() -> None:
         with col1:
             _render_copy_button(st.session_state.summary)
         with col2:
-            if st.button("🔊 Listen to Summary", key="tts_button", help="Listen to summary using browser TTS"):
-                try:
-                    text_to_speech(st.session_state.summary)
-                    _render_browser_tts(st.session_state.summary)
-                    st.success("Starting audio playback...")
-                except Exception as e:
-                    st.error(f"TTS Error: {str(e)}")
+            # Use a single button with dynamic text and functionality
+            if st.session_state.tts_playing:
+                if st.button("⏸️ Pause", key="tts_button", help="Pause audio playback"):
+                    st.session_state.tts_playing = False
+                    st.rerun()
+            else:
+                if st.button("🔊 Listen", key="tts_button", help="Listen to summary using browser TTS"):
+                    try:
+                        st.session_state.tts_playing = True
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"TTS Error: {str(e)}")
+                        st.session_state.tts_playing = False
+        
+        # TTS JavaScript that runs based on session state
+        _render_tts_controller(st.session_state.summary, st.session_state.tts_playing)
     else:
         st.caption("Your summary will appear here after processing.")
 
@@ -218,74 +229,78 @@ def _render_copy_button(text: str) -> None:
     )
 
 
-def _render_browser_tts(text: str) -> None:
+def _stop_tts() -> None:
     """
-    Render browser-based text-to-speech using Web Speech API.
+    Stop any current text-to-speech.
+    """
+    _html(
+        """
+        <script>
+            if ('speechSynthesis' in window) {
+                speechSynthesis.cancel();
+            }
+        </script>
+        """,
+        height=20,
+    )
+
+
+def _render_tts_controller(text: str, is_playing: bool) -> None:
+    """
+    Render TTS controller that handles play/pause based on session state.
     """
     import json
     
     safe_text = json.dumps(text)
+    playing_state = "true" if is_playing else "false"
+    
     _html(
         f"""
-        <div style="margin-top: 10px;">
-            <button id="speak-btn" style="padding: 8px 16px; background: #ff4b4b; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                🔊 Speak Now
-            </button>
-            <button id="stop-btn" style="padding: 8px 16px; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 8px;">
-                ⏹️ Stop
-            </button>
-            <script>
-                (function() {{
-                    const text = {safe_text};
-                    let utterance = null;
-                    
-                    const speakBtn = document.getElementById('speak-btn');
-                    const stopBtn = document.getElementById('stop-btn');
-                    
-                    if ('speechSynthesis' in window) {{
-                        speakBtn.addEventListener('click', function() {{
-                            // Stop any current speech
-                            speechSynthesis.cancel();
-                            
-                            // Create new utterance
-                            utterance = new SpeechSynthesisUtterance(text);
+        <script>
+            (function() {{
+                const text = {safe_text};
+                const shouldPlay = {playing_state};
+                
+                if ('speechSynthesis' in window) {{
+                    if (shouldPlay) {{
+                        // Stop any current speech first
+                        speechSynthesis.cancel();
+                        
+                        // Start new speech after a short delay
+                        setTimeout(() => {{
+                            const utterance = new SpeechSynthesisUtterance(text);
                             utterance.rate = 0.9;
                             utterance.pitch = 1;
                             utterance.volume = 1;
                             
-                            // Start speaking
-                            speechSynthesis.speak(utterance);
+                            utterance.onend = function() {{
+                                // Auto-refresh when speech ends to reset button
+                                setTimeout(() => {{
+                                    window.location.reload();
+                                }}, 500);
+                            }};
                             
-                            speakBtn.textContent = '🔊 Speaking...';
-                            speakBtn.disabled = true;
-                        }});
-                        
-                        stopBtn.addEventListener('click', function() {{
-                            speechSynthesis.cancel();
-                            speakBtn.textContent = '🔊 Speak Now';
-                            speakBtn.disabled = false;
-                        }});
-                        
-                        // Reset button when speech ends
-                        utterance = new SpeechSynthesisUtterance('');
-                        utterance.onend = function() {{
-                            speakBtn.textContent = '🔊 Speak Now';
-                            speakBtn.disabled = false;
-                        }};
-                        
-                        // Auto-start speaking
-                        setTimeout(() => {{
-                            speakBtn.click();
-                        }}, 100);
+                            utterance.onerror = function(event) {{
+                                console.log('TTS error:', event.error);
+                                // Auto-refresh on error
+                                setTimeout(() => {{
+                                    window.location.reload();
+                                }}, 500);
+                            }};
+                            
+                            speechSynthesis.speak(utterance);
+                        }}, 200);
                     }} else {{
-                        speakBtn.textContent = 'TTS Not Supported';
-                        speakBtn.disabled = true;
+                        // Stop current speech
+                        speechSynthesis.cancel();
                     }}
-                }})();
-            </script>
-        </div>
+                }} else {{
+                    console.log('Speech synthesis not supported in this browser');
+                }}
+            }})();
+        </script>
         """,
-        height=80,
+        height=10,
     )
 
 
