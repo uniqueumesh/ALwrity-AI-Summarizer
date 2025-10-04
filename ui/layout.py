@@ -198,7 +198,7 @@ def _render_copy_button(text: str) -> None:
     btn_id = f"copy_btn_{uuid.uuid4().hex}"
     _html(
         f"""
-        <button id="{btn_id}" style="margin-top:8px;">Copy</button>
+        <button id="{btn_id}" style="margin-top:8px;">Copy text</button>
         <script>
         (function() {{
           const btn = document.getElementById('{btn_id}');
