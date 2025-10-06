@@ -67,6 +67,51 @@ def render_layout() -> None:
 
     st.title("ALwrity-AI-Content-Summarizer")
     st.caption("Turn long text into clear, actionable summaries in seconds.")
+    # Global green theme (UI-only)
+    st.markdown(
+        """
+        <style>
+        :root { --alw-green: #22c55e; }
+
+        /* Buttons */
+        .stButton > button {
+            background: var(--alw-green) !important;
+            color: #ffffff !important;
+            border: none !important;
+            border-radius: 8px !important;
+        }
+        .stButton > button:hover { filter: brightness(0.95); }
+        .stButton > button:disabled { opacity: 0.6; }
+
+        /* Inputs focus ring */
+        .stTextInput input:focus, .stTextArea textarea:focus {
+            border-color: var(--alw-green) !important;
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15) !important;
+        }
+        .stSelectbox > div:focus-within {
+            border-color: var(--alw-green) !important;
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15) !important;
+        }
+
+        /* Radio selected to green (cover native + BaseWeb) */
+        input[type="radio"]:checked { accent-color: var(--alw-green); }
+        label[data-baseweb="radio"][aria-checked="true"] div[role="radio"] {
+            box-shadow: 0 0 0 2px var(--alw-green) inset !important;
+            border-color: var(--alw-green) !important;
+        }
+        /* Hide the default red SVG dot to avoid color conflicts */
+        label[data-baseweb="radio"] > div:first-child svg { opacity: 0 !important; }
+        /* Ensure we style the correct container and draw our own green dot */
+        div[role="radiogroup"] label[data-baseweb="radio"][aria-checked="true"] > div:first-child { border-color: var(--alw-green) !important; }
+        label[data-baseweb="radio"] > div:first-child { position: relative; }
+        label[data-baseweb="radio"][aria-checked="true"] > div:first-child::after {
+            content: ""; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 8px; height: 8px; border-radius: 50%; background: var(--alw-green) !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
     input_text = st.text_area(
         "Input Text (max 1000 words)",
@@ -82,41 +127,20 @@ def render_layout() -> None:
     st.markdown(f"<span style='color:{counter_color}'>Words: {word_count}/1000</span>", unsafe_allow_html=True)
 
     st.subheader("Options")
-    # Set selected radio bullet color to green (robust selectors)
-    st.markdown(
-        """
-        <style>
-        /* 1) Native radios */
-        input[type="radio"]:checked { accent-color: #22c55e; }
-
-        /* 2) BaseWeb outer circle */
-        label[data-baseweb="radio"][aria-checked="true"] div[role="radio"] {
-          box-shadow: 0 0 0 2px #22c55e inset !important;
-          border-color: #22c55e !important;
-        }
-        /* 3) BaseWeb inner dot (svg) */
-        label[data-baseweb="radio"][aria-checked="true"] svg {
-          color: #22c55e !important;
-          fill: #22c55e !important;
-        }
-        /* 4) Fallback first circle container */
-        div[role="radiogroup"] label[data-baseweb="radio"][aria-checked="true"] div:first-child {
-          border-color: #22c55e !important;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+    # Remove previous radio-color JS (no longer needed)
+    if "format_choice" not in st.session_state:
+        st.session_state["format_choice"] = "Paragraph"
     col1, col2, col3 = st.columns(3)
     with col1:
-        format_choice = st.radio(
+        # Dropdown selector like Tone/Language
+        format_choice = st.selectbox(
             "Result format",
             options=["Paragraph", "Bullet points"],
-            index=0,
-            horizontal=False,
-            key="format_choice",
+            index=["Paragraph", "Bullet points"].index(st.session_state.get("format_choice", "Paragraph")),
             help="Choose how the summary should look.",
+            key="format_choice_select",
         )
+        st.session_state["format_choice"] = format_choice
     with col2:
         tone_choice = st.selectbox(
             "Tone",
