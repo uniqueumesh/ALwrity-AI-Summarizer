@@ -3,7 +3,6 @@ from streamlit.components.v1 import html as _html
 from core.validation import clamp_to_word_limit, count_words, can_submit
 from core.prompt import build_prompt
 from services.gemini_client import summarize_with_gemini
-from services.tts_service import text_to_speech
 
 
 TONE_OPTIONS = [
@@ -83,6 +82,31 @@ def render_layout() -> None:
     st.markdown(f"<span style='color:{counter_color}'>Words: {word_count}/1000</span>", unsafe_allow_html=True)
 
     st.subheader("Options")
+    # Set selected radio bullet color to green (robust selectors)
+    st.markdown(
+        """
+        <style>
+        /* 1) Native radios */
+        input[type="radio"]:checked { accent-color: #22c55e; }
+
+        /* 2) BaseWeb outer circle */
+        label[data-baseweb="radio"][aria-checked="true"] div[role="radio"] {
+          box-shadow: 0 0 0 2px #22c55e inset !important;
+          border-color: #22c55e !important;
+        }
+        /* 3) BaseWeb inner dot (svg) */
+        label[data-baseweb="radio"][aria-checked="true"] svg {
+          color: #22c55e !important;
+          fill: #22c55e !important;
+        }
+        /* 4) Fallback first circle container */
+        div[role="radiogroup"] label[data-baseweb="radio"][aria-checked="true"] div:first-child {
+          border-color: #22c55e !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
     col1, col2, col3 = st.columns(3)
     with col1:
         format_choice = st.radio(
@@ -226,22 +250,6 @@ def _render_copy_button(text: str) -> None:
         </script>
         """,
         height=46,
-    )
-
-
-def _stop_tts() -> None:
-    """
-    Stop any current text-to-speech.
-    """
-    _html(
-        """
-        <script>
-            if ('speechSynthesis' in window) {
-                speechSynthesis.cancel();
-            }
-        </script>
-        """,
-        height=20,
     )
 
 
